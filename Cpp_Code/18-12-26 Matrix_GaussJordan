@@ -161,12 +161,6 @@ void CalcMatGaussJordan(MATRIX4* pM1) {
 								}
 							}
 						}
-
-						// 노답.. 예상 : 재귀함수
-						else {
-							cout << "<노답.. 예상 : 재귀함수>" << endl;
-							//MA = Mtmp;
-						}
 					}
 
 					else {
