@@ -1,0 +1,262 @@
+#include <iostream>
+
+using namespace std;
+
+typedef struct MATRIX4 {
+	union { // 공동체
+		struct {
+			float _11, _12, _13, _14;
+			float _21, _22, _23, _24;
+			float _31, _32, _33, _34;
+			float _41, _42, _43, _44;
+		};
+		float Mat[4][4]; // struct와 메모리 공간 연동
+	};
+};
+
+// 제로 행렬 초기화
+void CalcInitZero(MATRIX4* pM) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			pM->Mat[i][j] = 0.f;
+		}
+	}
+}
+
+// 항등 행렬 초기화
+void CalcInitI(MATRIX4* pM) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			if (i == j)
+				pM->Mat[i][j] = 1.f;
+			else
+				pM->Mat[i][j] = 0.f;
+		}
+	}
+}
+
+void OutMat(MATRIX4* pM) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			if (pM->Mat[i][j] == -0) pM->Mat[i][j] = 0;
+			cout << "[";
+			cout.width(4);
+			cout << fixed;
+			cout.precision(2);
+			cout << pM->Mat[i][j];
+			cout << "] ";
+		}
+		cout << endl;
+	}
+}
+
+void OutMat(MATRIX4* pM1, MATRIX4* pM2) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			if (pM1->Mat[i][j] == -0) pM1->Mat[i][j] = 0;
+			cout << "[";
+			//cout << fixed;
+			cout.width(5);
+			cout.precision(2);
+			cout << pM1->Mat[i][j];
+			cout << "] ";
+		}
+		cout << "  |  ";
+		for (int j = 0; j < 4; j++) {
+			if (pM2->Mat[i][j] == -0) pM2->Mat[i][j] = 0;
+			if (pM2->Mat[i][j] > -0.00001f && pM2->Mat[i][j] < 0.00001f) pM2->Mat[i][j] = 0;
+			cout << "[";
+			//cout << fixed;
+			cout.width(5);
+			cout.precision(2);
+			cout << pM2->Mat[i][j];
+			cout << "] ";
+		}
+		cout << endl;
+	}
+}
+
+void CalcMatMul(MATRIX4* pM1, MATRIX4* pM2) {
+	MATRIX4 tmp;
+	CalcInitZero(&tmp);
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			cout << "(";
+			for (int k = 0; k < 4; k++) {
+				tmp.Mat[i][j] += pM1->Mat[i][k] * pM2->Mat[k][j];
+				cout << pM1->Mat[i][k] << "*" << pM2->Mat[k][j];
+				if (k != 3) cout << " + ";
+			}
+			cout << ") ";
+		}
+		cout << endl;
+	}
+	*pM1 = tmp;
+}
+
+// 가우스-요르단 소거법
+// <규칙>
+// 1. 두 행을 교환
+// 2. 한 행에 0이 아닌 상수를 곱함
+// 3. 항 행의 배수를 다른 행에 더함 :: 행 줄 전체에 n을 곱하고 이것을 다른 행에 추가
+void CalcMatGaussJordan(MATRIX4* pM1) {
+	MATRIX4 MA = *pM1;
+	MATRIX4 MI;
+	CalcInitI(&MI);
+
+	cout << "::::::::::::::::::::::::::::::" << endl;
+	cout << ":::::::::: 시작행렬 ::::::::::" << endl;
+	cout << "::::::::::::::::::::::::::::::" << endl << endl;
+	cout << "<< MA >>, << MI >>" << endl;
+	OutMat(&MA, &MI);
+	cout << endl << endl;
+
+
+	// 가우스
+	cout << "::::::::::::::::::::::::::::::" << endl;
+	cout << ":::::::::::가우스::::::::::::" << endl;
+	cout << "::::::::::::::::::::::::::::::" << endl << endl;
+	for (int j = 0; j < 4; j++) {
+		for (int i = j; i < 4; i++) {
+			cout << "[" << i << "][" << j << "] :: ";
+
+			// 대각선 일 경우
+			if (i == j) {
+				cout << "<대각선 일 경우>" << endl;
+
+				if (MA.Mat[i][j] == 1) {
+					cout << "<패스>" << endl;
+				}
+
+				// -1일 경우 행에 -1을 곱함
+				else if (MA.Mat[i][j] == -1) {
+					cout << "<-1일 경우 행에 -1을 곱함>" << endl;
+					for (int k = 1; k < 4; k++) {
+						if (MA.Mat[i][k] != 0) MA.Mat[i][k] *= -1.f;
+						if (MI.Mat[i][k] != 0) MI.Mat[i][k] *= -1.f;
+					}
+				}
+
+				else {
+					// 1. 두 행을 교환
+					if (MA.Mat[i][i] == 0) {
+						if (i != 3) {
+							for (int k = i + 1; k < 4; k++) {
+								// 다음 행에 1 또는 -1이 있을 경우 스왑
+								if (MA.Mat[k][k] == 1 || MA.Mat[k][k] == -1) {
+									cout << "<다음 행에 1 또는 -1이 있을 경우 스왑>" << endl;
+									float tmpI[4];
+									float tmpA[4];
+									for (int l = 0; l < 4; l++) {
+										tmpA[l] = MA.Mat[k][l];
+										MA.Mat[k][l] = MA.Mat[i][l];
+										MA.Mat[i][l] = tmpA[l];
+
+										tmpI[l] = MI.Mat[k][l];
+										MI.Mat[k][l] = MI.Mat[i][l];
+										MI.Mat[i][l] = tmpI[l];
+									}
+									break;
+								}
+							}
+						}
+
+						// 노답.. 예상 : 재귀함수
+						else {
+							cout << "<노답.. 예상 : 재귀함수>" << endl;
+							//MA = Mtmp;
+						}
+					}
+
+					else {
+						cout << "<n으로 나누기>" << endl;
+						float tmp = MA.Mat[j][j];
+						for (int k = 4; k >= 0; k--) {
+							MA.Mat[i][k] /= tmp;
+							MI.Mat[i][k] /= tmp;
+						}
+					}
+				}
+			}
+
+			// 대각선이 아닐 경우
+			else {
+				cout << "<대각선이 아닐 경우>" << endl;
+
+				if (MA.Mat[i][j] == 0) {
+					cout << "<패스>" << endl;
+				}
+
+				else {
+					for (int k = j; k < 4; k++) {
+						if (i != k) {
+							float tmp = -MA.Mat[i][j];
+							if (MA.Mat[i][i] + (tmp * MA.Mat[k][i]) != 0) {
+								cout << "<" << k << "번째 행, " << tmp << " 곱하고 더하기>" << endl;
+								for (int l = 0; l < 4; l++) {
+									MA.Mat[i][l] += (tmp * MA.Mat[k][l]);
+									MI.Mat[i][l] += (tmp * MI.Mat[k][l]);
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			cout << "<< MA >>, << MI >>" << endl;
+			OutMat(&MA, &MI);
+			cout << endl << endl;
+		}
+	}
+
+
+	// 요르단
+	cout << "::::::::::::::::::::::::::::::" << endl;
+	cout << "::::::::::: 요르단 :::::::::::" << endl;
+	cout << "::::::::::::::::::::::::::::::" << endl << endl;
+
+	for (int j = 3; j >= 1; j--) {
+		for (int i = j-1; i >= 0; i--) {
+			cout << "[" << i << "][" << j << "] :: ";
+
+			cout << "<대각선이 아닐 경우>" << endl;
+
+			if (MA.Mat[i][j] == 0) {
+				cout << "<패스>" << endl;
+			}
+
+			else {
+				float tmp = -MA.Mat[i][j];
+				cout << "<" << tmp << " 곱하고 더하기>" << endl;
+				for (int l = 3; l >= 0; l--) {
+					MA.Mat[i][l] += (tmp * MA.Mat[j][l]);
+					MI.Mat[i][l] += (tmp * MI.Mat[j][l]);
+				}
+			}
+			cout << "<< MA >>, << MI >>" << endl;
+			OutMat(&MA, &MI);
+			cout << endl << endl;
+		}
+	}
+
+	cout << "::::::::::::::::::::::::::::::" << endl;
+	cout << ":::::::::::: 결과 ::::::::::::" << endl;
+	cout << "::::::::::::::::::::::::::::::" << endl << endl;
+	OutMat(&MA, &MI);
+}
+
+void main() {
+	MATRIX4 M1 = {
+		2, 2, 3, 4,
+		5, 6, 7, 8,
+		9, 10, 11, 12,
+		13, 14, 15, 17,
+	};
+
+	float pX[4] = { 5, 9, 3, 8 };
+
+	//CalcMatGaussJordan(&M1);
+
+}
