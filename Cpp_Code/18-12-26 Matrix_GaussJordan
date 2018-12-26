@@ -248,9 +248,6 @@ void main() {
 		9, 10, 11, 12,
 		13, 14, 15, 17,
 	};
-
-	float pX[4] = { 5, 9, 3, 8 };
-
-	//CalcMatGaussJordan(&M1);
-
+	
+	CalcMatGaussJordan(&M1);
 }
